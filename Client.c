@@ -26,7 +26,7 @@ int main() {
     server_address.sin_port = htons(PORT);
 
     // Convert IPv4 and IPv6 addresses from text to binary form
-    if (inet_pton(AF_INET, "192.168.33.129", &(server_address.sin_addr)) <= 0) {
+    if (inet_pton(AF_INET, "192.168.33.132", &(server_address.sin_addr)) <= 0) {
         perror("inet_pton failed");
         exit(EXIT_FAILURE);
     }
