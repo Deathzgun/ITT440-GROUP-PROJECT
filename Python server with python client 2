@@ -1,3 +1,5 @@
+//client
+
 import socket
 
 # Get server IP address and port number from user input
