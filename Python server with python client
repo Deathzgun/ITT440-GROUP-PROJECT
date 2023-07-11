@@ -1,77 +1,40 @@
-//Server
+//server
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <unistd.h>
-#include <time.h>
+import socket
+import datetime
 
-#define PORT 8484
+def handle_client(client_socket):
+    # Receive data from the client
+    data = client_socket.recv(1024).decode('utf-8')
 
-int main() {
-    int server_fd, client_socket, valread;
-    struct sockaddr_in server_address;
-    int opt = 1;
-    int addrlen = sizeof(server_address);
-    char buffer[1024] = {0};
-    char reply[2048] = {0};  // Increase buffer size to 2048
-    time_t current_time;
-    char* server_time;
+    # Manipulate incoming text with server's current date and time
+    current_time = datetime.datetime.now().strftime("%d %B %Y, %H:%M")
+    combined_text = f"{data} received at {current_time}"
 
-    // Create socket file descriptor
-    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
-        perror("socket failed");
-        exit(EXIT_FAILURE);
-    }
+    # Send the modified text back to the client
+    client_socket.send(combined_text.encode('utf-8'))
 
-    // Set socket options
-    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
-        perror("setsockopt");
-        exit(EXIT_FAILURE);
-    }
+    # Close the connection
+    client_socket.close()
 
-    server_address.sin_family = AF_INET;
-    server_address.sin_addr.s_addr = INADDR_ANY;
-    server_address.sin_port = htons(PORT);
+def start_server():
+    # Create a socket object
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-    // Bind the socket to the specified IP address and port
-    if (bind(server_fd, (struct sockaddr *)&server_address, sizeof(server_address)) < 0) {
-        perror("bind failed");
-        exit(EXIT_FAILURE);
-    }
+    # Bind the socket to a specific IP address and port
+    server_address = ('', 8484)
+    server_socket.bind(server_address)
 
-    // Listen for incoming connections
-    if (listen(server_fd, 5) < 0) {
-        perror("listen");
-        exit(EXIT_FAILURE);
-    }
+    # Listen for incoming connections
+    server_socket.listen(5)
+    print('Server listening on port 8484...')
 
-    printf("Server listening on port %d...\n", PORT);
+    while True:
+        # Accept a client connection
+        client_socket, client_address = server_socket.accept()
+        print(f'Accepted connection from {client_address[0]}:{client_address[1]}')
 
-    while (1) {
-        // Accept a new connection
-        if ((client_socket = accept(server_fd, (struct sockaddr )&server_address, (socklen_t)&addrlen)) < 0) {
-            perror("accept");
-            exit(EXIT_FAILURE);
-        }
+        # Handle the client in a separate thread
+        handle_client(client_socket)
 
-        // Receive data from the client
-        valread = read(client_socket, buffer, 1024);
-
-        // Manipulate incoming text with server's current date and time
-        current_time = time(NULL);
-        server_time = ctime(&current_time);
-        sprintf(reply, "%s received at %s", buffer, server_time);
-
-        // Send the modified text back to the client
-        send(client_socket, reply, strlen(reply), 0);
-        printf("Reply sent to the client: %s\n", reply);
-
-        // Close the client socket
-        close(client_socket);
-    }
-
-    return 0;
-}
+start_server()
