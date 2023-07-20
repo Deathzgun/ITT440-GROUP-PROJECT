@@ -1,4 +1,4 @@
-//server
+#server
 
 import socket
 import datetime
